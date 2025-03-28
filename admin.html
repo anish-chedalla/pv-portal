@@ -1,0 +1,163 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+    }
+    header {
+      background-color: #007BFF;
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    .logout-btn {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .logout-btn:hover {
+      background-color: #5a6268;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    h3 {
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+    .job-listing {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+    }
+    .job-listing h4 {
+      margin: 0 0 5px 0;
+    }
+    .job-listing small {
+      color: gray;
+    }
+    .buttons {
+      margin-top: 10px;
+    }
+    .buttons button {
+      margin-right: 10px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+    .approve-btn { background-color: #28a745; }
+    .delete-btn { background-color: #dc3545; }
+    .approve-btn:hover { background-color: #218838; }
+    .delete-btn:hover { background-color: #c82333; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Dashboard</h1>
+    <p>Approve or remove job listings submitted by employers</p>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </header>
+
+  <div class="container">
+    <h3>Pending Job Listings</h3>
+    <div id="pendingJobs"></div>
+
+    <h3>Approved Job Listings</h3>
+    <div id="approvedJobs"></div>
+  </div>
+
+  <script>
+    const pendingContainer = document.getElementById('pendingJobs');
+    const approvedContainer = document.getElementById('approvedJobs');
+
+    function logout() {
+      localStorage.removeItem('adminLoggedIn');
+      window.location.href = 'index.html';
+    }
+
+    function loadJobs() {
+      const allPending = JSON.parse(localStorage.getItem('jobSubmissions') || '[]');
+      const allApproved = JSON.parse(localStorage.getItem('approvedJobs') || '[]');
+
+      if (allPending.length === 0) {
+        pendingContainer.innerHTML = '<p>No pending jobs.</p>';
+      } else {
+        pendingContainer.innerHTML = allPending.map((job, index) => `
+          <div class="job-listing">
+            <h4>${job.title}</h4>
+            <small>${job.company}</small>
+            <p>${job.description}</p>
+            <div class="buttons">
+              <button class="approve-btn" onclick="approveJob(${index})">Approve</button>
+              <button class="delete-btn" onclick="deletePending(${index})">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      if (allApproved.length === 0) {
+        approvedContainer.innerHTML = '<p>No approved jobs.</p>';
+      } else {
+        approvedContainer.innerHTML = allApproved.map((job, index) => `
+          <div class="job-listing">
+            <h4>${job.title}</h4>
+            <small>${job.company}</small>
+            <p>${job.description}</p>
+            <div class="buttons">
+              <button class="delete-btn" onclick="deleteApproved(${index})">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function approveJob(index) {
+      const pending = JSON.parse(localStorage.getItem('jobSubmissions') || '[]');
+      const approved = JSON.parse(localStorage.getItem('approvedJobs') || '[]');
+      const job = pending.splice(index, 1)[0];
+      approved.push(job);
+      localStorage.setItem('jobSubmissions', JSON.stringify(pending));
+      localStorage.setItem('approvedJobs', JSON.stringify(approved));
+      loadJobs();
+    }
+
+    function deletePending(index) {
+      const pending = JSON.parse(localStorage.getItem('jobSubmissions') || '[]');
+      pending.splice(index, 1);
+      localStorage.setItem('jobSubmissions', JSON.stringify(pending));
+      loadJobs();
+    }
+
+    function deleteApproved(index) {
+      const approved = JSON.parse(localStorage.getItem('approvedJobs') || '[]');
+      approved.splice(index, 1);
+      localStorage.setItem('approvedJobs', JSON.stringify(approved));
+      loadJobs();
+    }
+
+    loadJobs();
+  </script>
+</body>
+</html>

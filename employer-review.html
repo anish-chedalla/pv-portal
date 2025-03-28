@@ -1,0 +1,84 @@
+<!-- employer-review.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Applications</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    .application {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .application strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .no-apps {
+      color: #666;
+    }
+    .logout-btn {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 10px 16px;
+      background-color: #6c757d;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .logout-btn:hover {
+      background-color: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <a href="#" class="logout-btn" onclick="logout()">Logout &rarr; Home</a>
+  <h2>Submitted Applications</h2>
+  <div id="applicationsContainer"></div>
+
+  <script>
+    const employerLoggedIn = localStorage.getItem('employerLoggedIn') === 'true';
+    if (!employerLoggedIn) {
+      window.location.href = 'login.html';
+    }
+
+    function logout() {
+      localStorage.removeItem('employerLoggedIn');
+      window.location.href = 'index.html';
+    }
+
+    const applicationsContainer = document.getElementById('applicationsContainer');
+    const applications = JSON.parse(localStorage.getItem('submittedApplications') || '[]');
+
+    function renderApplications() {
+      if (applications.length === 0) {
+        applicationsContainer.innerHTML = '<p class="no-apps">No applications submitted yet.</p>';
+        return;
+      }
+
+      applicationsContainer.innerHTML = applications.map(app => `
+        <div class="application">
+          <strong>Name:</strong> ${app.name}<br>
+          <strong>Email:</strong> ${app.email}<br>
+          <strong>Message:</strong>
+          <p>${app.message}</p>
+          <hr>
+          <em>Applied for: ${app.jobTitle} at ${app.company}</em>
+        </div>
+      `).join('');
+    }
+
+    renderApplications();
+  </script>
+</body>
+</html>

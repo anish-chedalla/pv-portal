@@ -1,0 +1,201 @@
+<!-- submit.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employer Portal</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+    }
+    header {
+      background-color: #007BFF;
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    .logout-btn {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .logout-btn:hover {
+      background-color: #5a6268;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .job-listing {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+    }
+    .application {
+      background: #f9f9f9;
+      border-left: 4px solid #007BFF;
+      margin: 10px 0 15px 0;
+      padding: 10px 15px;
+      border-radius: 6px;
+    }
+    .app-actions button {
+      margin-right: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      color: white;
+    }
+    .accept { background-color: #28a745; }
+    .decline { background-color: #dc3545; }
+    .status-label {
+      margin-top: 8px;
+      display: inline-block;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+    .accepted { background-color: #d4edda; color: #155724; }
+    .declined { background-color: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Employer Portal</h1>
+    <p>Post and manage your job listings and view student applications</p>
+    <a href="#" class="logout-btn" onclick="logout()">Logout</a>
+  </header>
+
+  <div class="container">
+    <form id="jobForm">
+      <h3>Create New Listing</h3>
+      <input type="text" id="company" placeholder="Company Name" required>
+      <input type="text" id="title" placeholder="Job Title" required>
+      <textarea id="description" placeholder="Job Description" rows="5" required></textarea>
+      <button type="submit">Submit Job</button>
+    </form>
+
+    <h3>Your Job Listings</h3>
+    <div id="jobList"></div>
+  </div>
+
+  <script>
+    const currentEmail = localStorage.getItem('currentUserEmail');
+    if (!localStorage.getItem('employerLoggedIn') || !currentEmail) {
+      window.location.href = 'login.html';
+    }
+
+    function logout() {
+      localStorage.removeItem('employerLoggedIn');
+      localStorage.removeItem('currentUserEmail');
+      window.location.href = 'index.html';
+    }
+
+    const jobForm = document.getElementById('jobForm');
+    const jobList = document.getElementById('jobList');
+
+    jobForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const job = {
+        company: document.getElementById('company').value,
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        submittedBy: currentEmail
+      };
+      const jobs = JSON.parse(localStorage.getItem('jobSubmissions') || '[]');
+      jobs.push(job);
+      localStorage.setItem('jobSubmissions', JSON.stringify(jobs));
+      jobForm.reset();
+      renderJobs();
+    });
+
+    function updateAppStatus(appKey, status) {
+      let appStatus = JSON.parse(localStorage.getItem('applicationStatus') || '{}');
+      appStatus[appKey] = status;
+      localStorage.setItem('applicationStatus', JSON.stringify(appStatus));
+      renderJobs();
+    }
+
+    function renderJobs() {
+      const allJobs = [...JSON.parse(localStorage.getItem('jobSubmissions') || '[]'), ...JSON.parse(localStorage.getItem('approvedJobs') || '[]')];
+      const applications = JSON.parse(localStorage.getItem('submittedApplications') || '[]');
+      const appStatus = JSON.parse(localStorage.getItem('applicationStatus') || '{}');
+
+      const myJobs = allJobs.filter(job => job.submittedBy === currentEmail);
+      jobList.innerHTML = myJobs.map(job => {
+        const apps = applications.filter(app => app.jobTitle === job.title && app.company === job.company);
+        const appList = apps.length === 0 ? '<em>No applications yet.</em>' : apps.map(app => {
+          const key = `${app.email}_${app.jobTitle}_${app.company}`;
+          const status = appStatus[key] || 'Pending';
+          return `
+            <div class="application">
+              <strong>${app.name}</strong> (${app.email})<br>
+              <p>${app.message}</p>
+              <div class="app-actions">
+                <button class="accept" onclick="updateAppStatus('${key}', 'Accepted')">Accept</button>
+                <button class="decline" onclick="updateAppStatus('${key}', 'Declined')">Decline</button>
+              </div>
+              <span class="status-label ${status.toLowerCase()}">${status}</span>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="job-listing">
+            <h4>${job.title}</h4>
+            <small>${job.company}</small>
+            <p>${job.description}</p>
+            ${appList}
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderJobs();
+  </script>
+</body>
+</html>
